@@ -1,32 +1,32 @@
-import { Component } from 'react'
+import { useState, useEffect } from 'react';
 
-export class ContactForm extends Component { 
+function ContactForm(props) { 
 
-    state = {
+    const [formData, setFormData] = useState({
         firstName: '',
         lastName: '',
         email: '',
         phone: ''
-    }
+    })
 
-    
-
-    handleInputChange = (event) => {
+const handleInputChange = (event) => {
 
         const {name, value} = event.target;
 
-        this.setState({
-            [name]: value
+        setFormData((prevFormData) => {
+            return {
+                ...prevFormData,
+                [name]: value
+            }
         })
-
     }
 
-    handleSubmit = (event) => {
+const handleSubmit = (event) => {
         event.preventDefault();
 
-        this.props.onSave(this.state)
+        props.onSave(formData)
 
-        this.setState({
+        setFormData({
             firstName: '',
             lastName: '',
             email: '',
@@ -34,87 +34,88 @@ export class ContactForm extends Component {
         })
     }
 
-    clearField = (field) => {
-        this.setState({
-            [field]: ''
+const clearField = (field) => {
+
+        setFormData((prevFormData) => {
+            return {
+                ...prevFormData,
+                [field]: ''
+            }
         })
     }
 
-    componentDidUpdate(prevProps) {
-        if (prevProps.selectedContact !== this.props.selectedContact) {
-            if (this.props.selectedContact) {
-                this.setState({
-                    firstName: this.props.selectedContact.firstName,
-                    lastName: this.props.selectedContact.lastName,
-                    email: this.props.selectedContact.email,
-                    phone: this.props.selectedContact.phone
-                })
-            }else {
-                this.setState({
-                    firstName: '',
-                    lastName: '',
-                    email: '',
-                    phone: ''
-                })
-            }
+    useEffect(() => {
+        if (props.selectedContact) {
+            setFormData({
+                firstName: props.selectedContact.firstName,
+                lastName: props.selectedContact.lastName,
+                email: props.selectedContact.email,
+                phone: props.selectedContact.phone
+            })
+        } else {
+            setFormData({
+                firstName: '',
+                lastName: '',
+                email: '',
+                phone: ''
+            })
         }
-    }
+    }, [props.selectedContact])
 
-    handleNew = () => {
-        this.props.onNew()
-        this.setState({
+const handleNew = () => {
+        props.onNew()
+
+        setFormData({
             firstName: '',
             lastName: '',
             email: '',
-            phone: '',
+            phone: ''
         })
-
     }
 
-  render() {
     return (
       <>
-        <form  onSubmit={this.handleSubmit}>
+        <form  onSubmit={handleSubmit}>
             <input 
             type="text" 
             name='firstName' 
             placeholder='FirstName'
-            value={this.state.firstName}
-            onChange={this.handleInputChange}
+            value={formData.firstName}
+            onChange={handleInputChange}
             />
-            <button type="button" onClick={() => this.clearField('firstName')}>X</button>
+            <button type="button" onClick={() => clearField('firstName')}>X</button>
             <input 
             type="text" 
             name='lastName' 
             placeholder='LastName'
-            value={this.state.lastName}
-            onChange={this.handleInputChange}
+            value={formData.lastName}
+            onChange={handleInputChange}
             />
-            <button type="button" onClick={() => this.clearField('lastName')}>X</button>
+            <button type="button" onClick={() => clearField('lastName')}>X</button>
             <input 
             type="text" 
             name='email' 
             placeholder='Email'
-            value={this.state.email}
-            onChange={this.handleInputChange}
+            value={formData.email}
+            onChange={handleInputChange}
             />
-            <button type="button" onClick={() => this.clearField('email')}>X</button>
+            <button type="button" onClick={() => clearField('email')}>X</button>
             <input 
             type="text" 
             name='phone' 
             placeholder='Phone'
-            value={this.state.phone}
-            onChange={this.handleInputChange}
+            value={formData.phone}
+            onChange={handleInputChange}
             />
-            <button type="button" onClick={() => this.clearField('phone')}>X</button>
+            <button type="button" onClick={() => clearField('phone')}>X</button>
             <button type='submit'>Save</button>
-            <button type="button" onClick={this.handleNew}>
+            <button type="button" onClick={handleNew}>
                 New
             </button>
-            {this.props.selectedContact && (
+            {props.selectedContact && (
                 <button
                     type="button"
-                    onClick={this.props.onDelete}
+                    onClick={props.onDelete}
                 >
                     Delete
                 </button>
@@ -123,6 +124,5 @@ export class ContactForm extends Component {
       </>
     )
   }
-}
 
 export default ContactForm

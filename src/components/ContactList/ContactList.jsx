@@ -1,23 +1,21 @@
-import { Component } from 'react'
 import ContactItem from '../ContactItem/ContactItem';
 
 
-export class ContactList extends Component {
+function ContactList(props) {
   
-  render() {
     return (
         <>
         <ul>
-          {this.props.contacts.map((contact) => {
+          {props.contacts.map((contact) => {
             return (
               
                 <ContactItem
                 key={contact.id}
                 firstName={contact.firstName}
                 lastName={contact.lastName}
-                onSelect={this.props.onSelect}
+                onSelect={props.onSelect}
                 id={contact.id}
-                onRemove={this.props.onRemove}
+                onRemove={props.onRemove}
               />
     
             )
@@ -29,6 +27,5 @@ export class ContactList extends Component {
      
     )
   }
-}
 
 export default ContactList
