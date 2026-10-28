@@ -1,57 +1,63 @@
 import { useEffect, useState } from 'react';
+import api from './api/contact-service';
 import ContactForm from './components/ContactForm/ContactForm'
 import ContactList from './components/ContactList/ContactList'
-import {nanoid} from 'nanoid'
 import './App.css'
-
 
 
 
 function App() {
   
-  const [contacts, setContacts] = useState(() => {
-    const savedContacts = localStorage.getItem('contacts');
-
-    return savedContacts ? JSON.parse(savedContacts) : [];
-  });
+  const [contacts, setContacts] = useState([]);
 
   const [editingContactId, setEditingContactId] = useState(null);
 
 useEffect(() => {
-    localStorage.setItem(
-        'contacts',
-        JSON.stringify(contacts)
-    )
-}, [contacts]);
+    api.get('/contacts')
+        .then((res) => {
+            setContacts(res.data)
+        }).catch((error) => {
+            console.error('Ошибка загрузки контактов:', error);
+        });
+}, []);
 
   const handleContactSave = (contact) => {
     if (editingContactId === null) {
-        setContacts((prevContacts) => {
-            return [
-                ...prevContacts,
-                {
-                    id: nanoid(),
-                    ...contact
-                }
-            ]
-        })
-    } else {
-        setContacts((prevContacts) => {
-            return prevContacts.map((item) => {
-                if (item.id === editingContactId) {
-                    return {
-                        ...item,
-                        ...contact
-                    }
-                } else {
-                    return item
-                }
-            })
-        })
-    }
+        api.post('/contacts', contact)
+            .then((res) => {
+                setContacts((prevContacts) => {
+                    return [
+                        ...prevContacts,
+                        res.data
+                    ];
+                });
 
-    setEditingContactId(null)
-}
+                setEditingContactId(null);
+            })
+            .catch((error) => {
+                console.error('Ошибка создания контакта:', error);
+            });
+
+    } else {
+        api.patch(`/contacts/${editingContactId}`, contact)
+            .then((res) => {
+                setContacts((prevContacts) => {
+                    return prevContacts.map((item) => {
+                        if (item.id === editingContactId) {
+                            return res.data;
+                        } else {
+                            return item;
+                        }
+                    });
+                });
+
+                setEditingContactId(null);
+            })
+            .catch((error) => {
+                console.error('Ошибка обновления контакта:', error);
+            });
+    }
+};
   
   const handleContactSelect = (id) => {
 
@@ -60,13 +66,9 @@ useEffect(() => {
   }
 
 const handleContactDelete = () => {
-    setContacts((prevContacts) => {
-        return prevContacts.filter(
-            (contact) => contact.id !== editingContactId
-        )
-    })
 
-    setEditingContactId(null)
+    handleContactRemove(editingContactId);
+
 }
 
 const handleContactNew = () => {
@@ -74,16 +76,22 @@ const handleContactNew = () => {
 }
 
 const handleContactRemove = (id) => {
-    setContacts((prevContacts) => {
-        return prevContacts.filter(
-            (contact) => contact.id !== id
-        )
-    })
+    api.delete(`/contacts/${id}`)
+        .then(() => {
+            setContacts((prevContacts) => {
+                return prevContacts.filter(
+                    (contact) => contact.id !== id
+                );
+            });
 
-    setEditingContactId((prevId) => {
-        return prevId === id ? null : prevId
-    })
-}
+            setEditingContactId((prevId) => {
+                return prevId === id ? null : prevId;
+            });
+        })
+        .catch((error) => {
+            console.error('Ошибка удаления контакта:', error);
+        });
+};
 
 
 const selectedContact = contacts.find(
