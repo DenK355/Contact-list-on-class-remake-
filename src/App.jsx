@@ -1,5 +1,11 @@
 import { useEffect, useState } from 'react';
-import api from './api/contact-service';
+import {
+    fetchContacts,
+    createContact,
+    editContact,
+    removeContact
+} from './store/actions/contactActions';
+import { useSelector, useDispatch } from 'react-redux';
 import ContactForm from './components/ContactForm/ContactForm'
 import ContactList from './components/ContactList/ContactList'
 import './App.css'
@@ -8,54 +14,29 @@ import './App.css'
 
 function App() {
   
-  const [contacts, setContacts] = useState([]);
+  const contacts = useSelector((state) => state.contactsList.contacts);
+
+  const dispatch = useDispatch();
 
   const [editingContactId, setEditingContactId] = useState(null);
 
 useEffect(() => {
-    api.get('/contacts')
-        .then((res) => {
-            setContacts(res.data)
-        }).catch((error) => {
-            console.error('Ошибка загрузки контактов:', error);
-        });
-}, []);
+    dispatch(fetchContacts());
+}, [dispatch]);
 
   const handleContactSave = (contact) => {
-    if (editingContactId === null) {
-        api.post('/contacts', contact)
-            .then((res) => {
-                setContacts((prevContacts) => {
-                    return [
-                        ...prevContacts,
-                        res.data
-                    ];
-                });
 
-                setEditingContactId(null);
-            })
-            .catch((error) => {
-                console.error('Ошибка создания контакта:', error);
-            });
+    if (editingContactId === null) {
+
+        dispatch(createContact(contact));
 
     } else {
-        api.patch(`/contacts/${editingContactId}`, contact)
-            .then((res) => {
-                setContacts((prevContacts) => {
-                    return prevContacts.map((item) => {
-                        if (item.id === editingContactId) {
-                            return res.data;
-                        } else {
-                            return item;
-                        }
-                    });
-                });
 
+        dispatch(editContact(editingContactId, contact))
+            .then(() => {
                 setEditingContactId(null);
-            })
-            .catch((error) => {
-                console.error('Ошибка обновления контакта:', error);
-            });
+            });;
+
     }
 };
   
@@ -76,20 +57,13 @@ const handleContactNew = () => {
 }
 
 const handleContactRemove = (id) => {
-    api.delete(`/contacts/${id}`)
+    dispatch(removeContact(id))
         .then(() => {
-            setContacts((prevContacts) => {
-                return prevContacts.filter(
-                    (contact) => contact.id !== id
-                );
-            });
-
-            setEditingContactId((prevId) => {
-                return prevId === id ? null : prevId;
-            });
-        })
-        .catch((error) => {
-            console.error('Ошибка удаления контакта:', error);
+            if (id === editingContactId) {
+                setEditingContactId(null);
+            }
+        }).catch((error) => {
+            console.error('Не удалось удалить контакт:', error);
         });
 };
 
