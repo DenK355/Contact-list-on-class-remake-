@@ -6,7 +6,8 @@ export class ContactForm extends Component {
         firstName: '',
         lastName: '',
         email: '',
-        phone: ''
+        phone: '',
+        previousSelectedId: null
     }
 
     
@@ -23,41 +24,53 @@ export class ContactForm extends Component {
 
     handleSubmit = (event) => {
         event.preventDefault();
+        
+        const { previousSelectedId, ...contactData } = this.state;
 
-        this.props.onSave(this.state)
-
-        this.setState({
-            firstName: '',
-            lastName: '',
-            email: '',
-            phone: ''
-        })
-    }
-
-    clearField = (field) => {
-        this.setState({
-            [field]: ''
-        })
-    }
-
-    componentDidUpdate(prevProps) {
-        if (prevProps.selectedContact !== this.props.selectedContact) {
-            if (this.props.selectedContact) {
-                this.setState({
-                    firstName: this.props.selectedContact.firstName,
-                    lastName: this.props.selectedContact.lastName,
-                    email: this.props.selectedContact.email,
-                    phone: this.props.selectedContact.phone
-                })
-            }else {
-                this.setState({
-                    firstName: '',
-                    lastName: '',
-                    email: '',
-                    phone: ''
-                })
-            }
+        this.props.onSave(contactData);
+    
+        if (!this.props.selectedContact) {
+            this.setState({
+                firstName: '',
+                lastName: '',
+                email: '',
+                phone: ''
+            });
         }
+    };
+
+    clearField = (event) => {
+        const { name } = event.target;
+    
+        this.setState({
+            [name]: ''
+        });
+    };
+
+    static getDerivedStateFromProps(props, state) {
+        const selectedId = props.selectedContact?.id ?? null;
+    
+        if (selectedId !== state.previousSelectedId) {
+            if (props.selectedContact) {
+                return {
+                    firstName: props.selectedContact.firstName,
+                    lastName: props.selectedContact.lastName,
+                    email: props.selectedContact.email,
+                    phone: props.selectedContact.phone,
+                    previousSelectedId: selectedId
+                };
+            }
+    
+            return {
+                firstName: '',
+                lastName: '',
+                email: '',
+                phone: '',
+                previousSelectedId: null
+            };
+        }
+    
+        return null;
     }
 
     handleNew = () => {
@@ -68,7 +81,6 @@ export class ContactForm extends Component {
             email: '',
             phone: '',
         })
-
     }
 
   render() {
@@ -82,7 +94,7 @@ export class ContactForm extends Component {
             value={this.state.firstName}
             onChange={this.handleInputChange}
             />
-            <button type="button" onClick={() => this.clearField('firstName')}>X</button>
+            <button type="button" name="firstName" onClick={this.clearField}>X</button>
             <input 
             type="text" 
             name='lastName' 
@@ -90,7 +102,7 @@ export class ContactForm extends Component {
             value={this.state.lastName}
             onChange={this.handleInputChange}
             />
-            <button type="button" onClick={() => this.clearField('lastName')}>X</button>
+            <button type="button" name="lastName" onClick={this.clearField}>X</button>
             <input 
             type="text" 
             name='email' 
@@ -98,7 +110,7 @@ export class ContactForm extends Component {
             value={this.state.email}
             onChange={this.handleInputChange}
             />
-            <button type="button" onClick={() => this.clearField('email')}>X</button>
+            <button type="button" name="email" onClick={this.clearField}>X</button>
             <input 
             type="text" 
             name='phone' 
@@ -106,7 +118,7 @@ export class ContactForm extends Component {
             value={this.state.phone}
             onChange={this.handleInputChange}
             />
-            <button type="button" onClick={() => this.clearField('phone')}>X</button>
+            <button type="button" name="phone" onClick={this.clearField}>X</button>
             <button type='submit'>Save</button>
             <button type="button" onClick={this.handleNew}>
                 New

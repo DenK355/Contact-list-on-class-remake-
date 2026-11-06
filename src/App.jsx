@@ -12,7 +12,9 @@ class App extends Component {
 
     contacts : [],
 
-    editingContactId: null
+    editingContactId: null,
+
+    selectedContact: null
 
   }
 
@@ -26,49 +28,41 @@ class App extends Component {
                         id: nanoid(),
                         ...contact
                     }
-                ],
-                editingContactId: null
-            }
-        } else {
-            return {
-                contacts: state.contacts.map((item) => {
-                    if (item.id === state.editingContactId) {
-                        return {
-                            ...item,
-                            ...contact
-                        }
-                    } else {
-                        return item
-                    }
-                }),
-                editingContactId: null
-            }
+                ]
+            };
         }
-    })
-}
-  
-  handleContactSelect = (id) => {
 
-    this.setState({
-      editingContactId: id
-    })
+        const updatedContact = {
+            ...contact,
+            id: state.editingContactId
+        };
 
-  }
-
-  handleContactDelete = () => {
-    this.setState((state) => {
         return {
-            contacts: state.contacts.filter(
-                (contact) => contact.id !== state.editingContactId
-            ),
-            editingContactId: null
-        }
-    })
-}
+            contacts: state.contacts.map((item) => {
+                if (item.id === state.editingContactId) {
+                    return updatedContact;
+                }
+
+                return item;
+            }),
+            selectedContact: updatedContact
+        };
+    });
+};
+  
+handleContactSelect = (id) => {
+  this.setState({
+      editingContactId: id,
+      selectedContact: this.state.contacts.find(
+          (contact) => contact.id === id
+      )
+  });
+};
 
 handleContactNew = () => {
   this.setState({
-      editingContactId: null
+      editingContactId: null,
+      selectedContact: null
   })
 }
 
@@ -81,7 +75,11 @@ handleContactRemove = (id) => {
 
           editingContactId: id === state.editingContactId
           ? null
-          : state.editingContactId
+          : state.editingContactId,
+
+          selectedContact: id === state.editingContactId
+          ? null
+          : state.selectedContact
       }
   })
 }
@@ -106,9 +104,6 @@ componentDidMount() {
 }
 
   render(){
-    const selectedContact = this.state.contacts.find(
-      (contact) => contact.id === this.state.editingContactId
-    );
     return (
     <div className="app">
 
@@ -120,9 +115,9 @@ componentDidMount() {
 
         <ContactForm
             onSave={this.handleContactSave}
-            onDelete={this.handleContactDelete}
+            onDelete={() => this.handleContactRemove(this.state.editingContactId)}
             onNew={this.handleContactNew}
-            selectedContact={selectedContact}
+            selectedContact={this.state.selectedContact}
         />
     </div>
 
