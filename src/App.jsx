@@ -1,122 +1,106 @@
+
 import { useEffect, useState } from 'react';
 import api from './api/contact-service';
-import ContactForm from './components/ContactForm/ContactForm'
-import ContactList from './components/ContactList/ContactList'
-import './App.css'
-
-
+import ContactForm from './components/ContactForm/ContactForm';
+import ContactList from './components/ContactList/ContactList';
+import './App.css';
 
 function App() {
-  
-  const [contacts, setContacts] = useState([]);
+    const [contacts, setContacts] = useState([]);
+    const [selectedContact, setSelectedContact] = useState(null);
 
-  const [editingContactId, setEditingContactId] = useState(null);
-
-useEffect(() => {
-    api.get('/contacts')
-        .then((res) => {
-            setContacts(res.data)
-        }).catch((error) => {
-            console.error('Ошибка загрузки контактов:', error);
-        });
-}, []);
-
-  const handleContactSave = (contact) => {
-    if (editingContactId === null) {
-        api.post('/contacts', contact)
+    useEffect(() => {
+        api.get('/contacts')
             .then((res) => {
-                setContacts((prevContacts) => {
-                    return [
-                        ...prevContacts,
-                        res.data
-                    ];
-                });
-
-                setEditingContactId(null);
+                setContacts(res.data);
             })
             .catch((error) => {
-                console.error('Ошибка создания контакта:', error);
+                console.error('Ошибка загрузки контактов:', error);
             });
+    }, []);
 
-    } else {
-        api.patch(`/contacts/${editingContactId}`, contact)
+    const handleContactSave = (contact) => {
+        if (selectedContact === null) {
+            api.post('/contacts', contact)
+                .then((res) => {
+                    setContacts((prevContacts) => {
+                        return [...prevContacts, res.data];
+                    });
+                })
+                .catch((error) => {
+                    console.error('Ошибка создания контакта:', error);
+                });
+
+            return;
+        }
+
+        api.patch(`/contacts/${selectedContact.id}`, contact)
             .then((res) => {
                 setContacts((prevContacts) => {
                     return prevContacts.map((item) => {
-                        if (item.id === editingContactId) {
+                        if (item.id === selectedContact.id) {
                             return res.data;
-                        } else {
-                            return item;
                         }
+
+                        return item;
                     });
                 });
 
-                setEditingContactId(null);
+                setSelectedContact(res.data);
             })
             .catch((error) => {
                 console.error('Ошибка обновления контакта:', error);
             });
-    }
-};
-  
-  const handleContactSelect = (id) => {
+    };
 
-    setEditingContactId(id)
+    const handleContactSelect = (id) => {
+        const contact = contacts.find((item) => item.id === id);
 
-  }
+        setSelectedContact(contact ?? null);
+    };
 
-const handleContactDelete = () => {
+    const handleContactNew = () => {
+        setSelectedContact(null);
+    };
 
-    handleContactRemove(editingContactId);
+    const handleContactRemove = (id) => {
+        api.delete(`/contacts/${id}`)
+            .then(() => {
+                setContacts((prevContacts) => {
+                    return prevContacts.filter(
+                        (contact) => contact.id !== id
+                    );
+                });
 
-}
-
-const handleContactNew = () => {
-  setEditingContactId(null)
-}
-
-const handleContactRemove = (id) => {
-    api.delete(`/contacts/${id}`)
-        .then(() => {
-            setContacts((prevContacts) => {
-                return prevContacts.filter(
-                    (contact) => contact.id !== id
-                );
+                setSelectedContact((prevContact) => {
+                    return prevContact?.id === id ? null : prevContact;
+                });
+            })
+            .catch((error) => {
+                console.error('Ошибка удаления контакта:', error);
             });
-
-            setEditingContactId((prevId) => {
-                return prevId === id ? null : prevId;
-            });
-        })
-        .catch((error) => {
-            console.error('Ошибка удаления контакта:', error);
-        });
-};
-
-
-const selectedContact = contacts.find(
-  (contact) => contact.id === editingContactId
-);
+    };
 
     return (
-    <div className="app">
+        <div className="app">
+            <ContactList
+                contacts={contacts}
+                onSelect={handleContactSelect}
+                onRemove={handleContactRemove}
+            />
 
-        <ContactList
-            contacts={contacts}
-            onSelect={handleContactSelect}
-            onRemove={handleContactRemove}
-        />
+            <ContactForm
+                onSave={handleContactSave}
+                onDelete={() => {
+                    if (selectedContact) {
+                        handleContactRemove(selectedContact.id);
+                    }
+                }}
+                onNew={handleContactNew}
+                selectedContact={selectedContact}
+            />
+        </div>
+    );
+}
 
-        <ContactForm
-            onSave={handleContactSave}
-            onDelete={handleContactDelete}
-            onNew={handleContactNew}
-            selectedContact={selectedContact}
-        />
-    </div>
-
-    )
-  }
-
-
-export default App
+export default App;

@@ -1,48 +1,45 @@
+
 import { useState, useEffect } from 'react';
 
-function ContactForm(props) { 
+const emptyForm = {
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: ''
+};
 
-    const [formData, setFormData] = useState({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: ''
-    })
+function ContactForm(props) {
+    const [formData, setFormData] = useState(emptyForm);
 
-const handleInputChange = (event) => {
-
-        const {name, value} = event.target;
+    const handleInputChange = (event) => {
+        const { name, value } = event.target;
 
         setFormData((prevFormData) => {
             return {
                 ...prevFormData,
                 [name]: value
-            }
-        })
-    }
+            };
+        });
+    };
 
-const handleSubmit = (event) => {
+    const handleSubmit = (event) => {
         event.preventDefault();
 
-        props.onSave(formData)
+        props.onSave(formData);
 
-        setFormData({
-            firstName: '',
-            lastName: '',
-            email: '',
-            phone: ''
-        })
-    }
+        setFormData(emptyForm);
+    };
 
-const clearField = (field) => {
+    const clearField = (event) => {
+        const field = event.target.name;
 
         setFormData((prevFormData) => {
             return {
                 ...prevFormData,
                 [field]: ''
-            }
-        })
-    }
+            };
+        });
+    };
 
     useEffect(() => {
         if (props.selectedContact) {
@@ -51,67 +48,61 @@ const clearField = (field) => {
                 lastName: props.selectedContact.lastName,
                 email: props.selectedContact.email,
                 phone: props.selectedContact.phone
-            })
+            });
         } else {
-            setFormData({
-                firstName: '',
-                lastName: '',
-                email: '',
-                phone: ''
-            })
+            setFormData(emptyForm);
         }
-    }, [props.selectedContact])
+    }, [props.selectedContact]);
 
-const handleNew = () => {
-        props.onNew()
-
-        setFormData({
-            firstName: '',
-            lastName: '',
-            email: '',
-            phone: ''
-        })
-    }
+    const handleNew = () => {
+        props.onNew();
+        setFormData(emptyForm);
+    };
 
     return (
-      <>
-        <form  onSubmit={handleSubmit}>
-            <input 
-            type="text" 
-            name='firstName' 
-            placeholder='FirstName'
-            value={formData.firstName}
-            onChange={handleInputChange}
+        <form onSubmit={handleSubmit}>
+            <input
+                type="text"
+                name="firstName"
+                placeholder="FirstName"
+                value={formData.firstName}
+                onChange={handleInputChange}
             />
-            <button type="button" onClick={() => clearField('firstName')}>X</button>
-            <input 
-            type="text" 
-            name='lastName' 
-            placeholder='LastName'
-            value={formData.lastName}
-            onChange={handleInputChange}
+            <button type="button" name="firstName" onClick={clearField}>X</button>
+
+            <input
+                type="text"
+                name="lastName"
+                placeholder="LastName"
+                value={formData.lastName}
+                onChange={handleInputChange}
             />
-            <button type="button" onClick={() => clearField('lastName')}>X</button>
-            <input 
-            type="text" 
-            name='email' 
-            placeholder='Email'
-            value={formData.email}
-            onChange={handleInputChange}
+            <button type="button" name="lastName" onClick={clearField}>X</button>
+
+            <input
+                type="text"
+                name="email"
+                placeholder="Email"
+                value={formData.email}
+                onChange={handleInputChange}
             />
-            <button type="button" onClick={() => clearField('email')}>X</button>
-            <input 
-            type="text" 
-            name='phone' 
-            placeholder='Phone'
-            value={formData.phone}
-            onChange={handleInputChange}
+            <button type="button" name="email" onClick={clearField}>X</button>
+
+            <input
+                type="text"
+                name="phone"
+                placeholder="Phone"
+                value={formData.phone}
+                onChange={handleInputChange}
             />
-            <button type="button" onClick={() => clearField('phone')}>X</button>
-            <button type='submit'>Save</button>
+            <button type="button" name="phone" onClick={clearField}>X</button>
+
+            <button type="submit">Save</button>
+
             <button type="button" onClick={handleNew}>
                 New
             </button>
+
             {props.selectedContact && (
                 <button
                     type="button"
@@ -121,8 +112,7 @@ const handleNew = () => {
                 </button>
             )}
         </form>
-      </>
-    )
-  }
+    );
+}
 
-export default ContactForm
+export default ContactForm;
