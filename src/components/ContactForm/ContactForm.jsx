@@ -34,15 +34,16 @@ const handleSubmit = (event) => {
         })
     }
 
-const clearField = (field) => {
-
+    const clearField = (event) => {
+        const field = event.target.name;
+    
         setFormData((prevFormData) => {
             return {
                 ...prevFormData,
                 [field]: ''
-            }
-        })
-    }
+            };
+        });
+    };
 
     useEffect(() => {
         if (props.selectedContact) {
@@ -83,7 +84,7 @@ const handleNew = () => {
             value={formData.firstName}
             onChange={handleInputChange}
             />
-            <button type="button" onClick={() => clearField('firstName')}>X</button>
+            <button type="button" name="firstName" onClick={clearField}>X</button>
             <input 
             type="text" 
             name='lastName' 
@@ -91,7 +92,7 @@ const handleNew = () => {
             value={formData.lastName}
             onChange={handleInputChange}
             />
-            <button type="button" onClick={() => clearField('lastName')}>X</button>
+            <button type="button" name="lastName" onClick={clearField}>X</button>
             <input 
             type="text" 
             name='email' 
@@ -99,7 +100,7 @@ const handleNew = () => {
             value={formData.email}
             onChange={handleInputChange}
             />
-            <button type="button" onClick={() => clearField('email')}>X</button>
+            <button type="button" name="email" onClick={clearField}>X</button>
             <input 
             type="text" 
             name='phone' 
@@ -107,7 +108,7 @@ const handleNew = () => {
             value={formData.phone}
             onChange={handleInputChange}
             />
-            <button type="button" onClick={() => clearField('phone')}>X</button>
+            <button type="button" name="phone" onClick={clearField}>X</button>
             <button type='submit'>Save</button>
             <button type="button" onClick={handleNew}>
                 New

@@ -9,86 +9,85 @@ import './App.css'
 
 function App() {
   
-  const [contacts, setContacts] = useState(() => {
+  const [contacts, setContacts] = useState([]);
+
+  const [selectedContact, setSelectedContact] = useState(null);
+
+  const [isLoaded, setIsLoaded] = useState(false)
+
+  useEffect(() => {
+    if (!isLoaded) {
+        getFromStorage();
+    } else {
+        saveToStorage();
+    }
+}, [contacts, isLoaded]);
+
+  function getFromStorage() {
     const savedContacts = localStorage.getItem('contacts');
 
-    return savedContacts ? JSON.parse(savedContacts) : [];
-  });
+    if (savedContacts) {
+        setContacts(JSON.parse(savedContacts));
+    }
 
-  const [editingContactId, setEditingContactId] = useState(null);
+    setIsLoaded(true);
+}
 
-useEffect(() => {
+function saveToStorage() {
     localStorage.setItem(
         'contacts',
         JSON.stringify(contacts)
-    )
-}, [contacts]);
+    );
+}
 
-  const handleContactSave = (contact) => {
-    if (editingContactId === null) {
+
+const handleContactSave = (contact) => {
+    if (selectedContact === null) {
         setContacts((prevContacts) => {
-            return [
-                ...prevContacts,
-                {
-                    id: nanoid(),
-                    ...contact
-                }
-            ]
-        })
+            return [...prevContacts, { id: nanoid(), ...contact }];
+        });
     } else {
+        const updatedContact = {
+            ...contact,
+            id: selectedContact.id
+        };
+
         setContacts((prevContacts) => {
             return prevContacts.map((item) => {
-                if (item.id === editingContactId) {
-                    return {
-                        ...item,
-                        ...contact
-                    }
-                } else {
-                    return item
+                if (item.id === selectedContact.id) {
+                    return updatedContact;
                 }
-            })
-        })
-    }
 
-    setEditingContactId(null)
-}
+                return item;
+            });
+        });
+
+        setSelectedContact(updatedContact);
+    }
+};
   
   const handleContactSelect = (id) => {
+    const contact = contacts.find((item) => item.id === id);
 
-    setEditingContactId(id)
-
-  }
-
-const handleContactDelete = () => {
-    setContacts((prevContacts) => {
-        return prevContacts.filter(
-            (contact) => contact.id !== editingContactId
-        )
-    })
-
-    setEditingContactId(null)
-}
+    setSelectedContact(contact ?? null);
+};
 
 const handleContactNew = () => {
-  setEditingContactId(null)
-}
+    setSelectedContact(null);
+};
 
 const handleContactRemove = (id) => {
     setContacts((prevContacts) => {
         return prevContacts.filter(
             (contact) => contact.id !== id
-        )
-    })
+        );
+    });
 
-    setEditingContactId((prevId) => {
-        return prevId === id ? null : prevId
-    })
-}
+    setSelectedContact((prevContact) => {
+        return prevContact?.id === id ? null : prevContact;
+    });
+};
 
-
-const selectedContact = contacts.find(
-  (contact) => contact.id === editingContactId
-);
 
     return (
     <div className="app">
@@ -101,7 +100,11 @@ const selectedContact = contacts.find(
 
         <ContactForm
             onSave={handleContactSave}
-            onDelete={handleContactDelete}
+            onDelete={() => {
+                if (selectedContact) {
+                    handleContactRemove(selectedContact.id);
+                }
+            }}
             onNew={handleContactNew}
             selectedContact={selectedContact}
         />
