@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 const emptyForm = {
     firstName: '',
@@ -9,7 +9,18 @@ const emptyForm = {
 };
 
 function ContactForm(props) {
-    const [formData, setFormData] = useState(emptyForm);
+    const [formData, setFormData] = useState(() => {
+        if (props.selectedContact) {
+            return {
+                firstName: props.selectedContact.firstName,
+                lastName: props.selectedContact.lastName,
+                email: props.selectedContact.email,
+                phone: props.selectedContact.phone
+            };
+        }
+
+        return { ...emptyForm };
+    });
 
     const handleInputChange = (event) => {
         const { name, value } = event.target;
@@ -31,7 +42,7 @@ function ContactForm(props) {
             await props.onSave(formData);
 
             if (isCreating) {
-                setFormData(emptyForm);
+                setFormData({ ...emptyForm });
             }
         } catch (error) {
             console.error('Не удалось сохранить контакт:', error);
@@ -49,22 +60,9 @@ function ContactForm(props) {
         });
     };
 
-    useEffect(() => {
-        if (props.selectedContact) {
-            setFormData({
-                firstName: props.selectedContact.firstName,
-                lastName: props.selectedContact.lastName,
-                email: props.selectedContact.email,
-                phone: props.selectedContact.phone
-            });
-        } else {
-            setFormData(emptyForm);
-        }
-    }, [props.selectedContact]);
-
     const handleNew = () => {
         props.onNew();
-        setFormData(emptyForm);
+        setFormData({ ...emptyForm });
     };
 
     return (

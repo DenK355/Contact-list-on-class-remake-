@@ -5,7 +5,7 @@ import {
     createContact,
     editContact,
     removeContact
-} from './store/actions/contactActions';
+} from './store/slices/contactSlice';
 import { useSelector, useDispatch } from 'react-redux';
 import ContactForm from './components/ContactForm/ContactForm';
 import ContactList from './components/ContactList/ContactList';
@@ -24,28 +24,44 @@ function App() {
         dispatch(fetchContacts());
     }, [dispatch]);
 
-    const handleContactSave = (contact) => {
-      if (selectedContact === null) {
-          return dispatch(createContact(contact));
-      }
-  
-      const contactId = selectedContact.id;
-  
-      return dispatch(editContact(contactId, contact))
-          .then((updatedContact) => {
-              setSelectedContact((prevContact) => {
-                  if (prevContact?.id !== contactId) {
-                      return prevContact;
-                  }
-  
-                  return updatedContact;
-              });
-          })
-          .catch((error) => {
-              console.error('Не удалось обновить контакт:', error);
-              throw error;
-          });
-  };
+    const handleContactSave = async (contact) => {
+        try {
+            if (selectedContact === null) {
+                const result = await dispatch(createContact(contact));
+
+                if (result.error) {
+                    throw new Error(result.error.message);
+                }
+
+                return;
+            }
+
+            const contactId = selectedContact.id;
+
+            const result = await dispatch(
+                editContact({
+                    id: contactId,
+                    contact
+                })
+            );
+
+            if (result.error) {
+                throw new Error(result.error.message);
+            }
+
+            setSelectedContact((prevContact) => {
+                if (prevContact?.id !== contactId) {
+                    return prevContact;
+                }
+
+                return result.payload;
+            });
+
+        } catch (error) {
+            console.error('Ошибка сохранения контакта:', error);
+            throw error;
+        }
+    };
 
     const handleContactSelect = (id) => {
         const contact = contacts.find(
@@ -59,21 +75,23 @@ function App() {
         setSelectedContact(null);
     };
 
-    const handleContactRemove = (id) => {
-        dispatch(removeContact(id))
-            .then(() => {
-                setSelectedContact((prevContact) => {
-                    return prevContact?.id === id
-                        ? null
-                        : prevContact;
-                });
-            })
-            .catch((error) => {
-                console.error(
-                    'Не удалось удалить контакт:',
-                    error
-                );
+    const handleContactRemove = async (id) => {
+        try {
+            const result = await dispatch(removeContact(id));
+
+            if (result.error) {
+                throw new Error(result.error.message);
+            }
+
+            setSelectedContact((prevContact) => {
+                return prevContact?.id === id
+                    ? null
+                    : prevContact;
             });
+
+        } catch (error) {
+            console.error('Ошибка удаления контакта:', error);
+        }
     };
 
     return (
@@ -85,6 +103,7 @@ function App() {
             />
 
             <ContactForm
+                key={selectedContact?.id ?? 'new'}
                 onSave={handleContactSave}
                 onDelete={() => {
                     if (selectedContact) {

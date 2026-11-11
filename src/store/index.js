@@ -1,5 +1,10 @@
-import { createStore, applyMiddleware } from 'redux';
-import { thunk } from 'redux-thunk';
-import rootReducer from './reducers/index.js';
+import { configureStore } from '@reduxjs/toolkit';
+import contactsReducer from './slices/contactSlice';
 
-export default createStore(rootReducer, applyMiddleware(thunk))
+const store = configureStore({
+    reducer: {
+        contactsList: contactsReducer
+    }
+});
+
+export default store;
