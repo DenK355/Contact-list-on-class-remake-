@@ -59,9 +59,12 @@ export const editContact = (id, contact) => {
         return api.patch(`/contacts/${id}`, contact)
             .then((res) => {
                 dispatch(updateContact(res.data));
-            }).catch((error) => {
+
+                return res.data;
+            })
+            .catch((error) => {
                 console.error('Ошибка обновления контакта:', error);
-                throw error
+                throw error;
             });
     };
 };

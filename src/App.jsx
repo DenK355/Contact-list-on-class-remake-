@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import {
     fetchContacts,
@@ -6,91 +7,95 @@ import {
     removeContact
 } from './store/actions/contactActions';
 import { useSelector, useDispatch } from 'react-redux';
-import ContactForm from './components/ContactForm/ContactForm'
-import ContactList from './components/ContactList/ContactList'
-import './App.css'
-
-
+import ContactForm from './components/ContactForm/ContactForm';
+import ContactList from './components/ContactList/ContactList';
+import './App.css';
 
 function App() {
+    const contacts = useSelector(
+        (state) => state.contactsList.contacts
+    );
+
+    const dispatch = useDispatch();
+
+    const [selectedContact, setSelectedContact] = useState(null);
+
+    useEffect(() => {
+        dispatch(fetchContacts());
+    }, [dispatch]);
+
+    const handleContactSave = (contact) => {
+      if (selectedContact === null) {
+          return dispatch(createContact(contact));
+      }
   
-  const contacts = useSelector((state) => state.contactsList.contacts);
+      const contactId = selectedContact.id;
+  
+      return dispatch(editContact(contactId, contact))
+          .then((updatedContact) => {
+              setSelectedContact((prevContact) => {
+                  if (prevContact?.id !== contactId) {
+                      return prevContact;
+                  }
+  
+                  return updatedContact;
+              });
+          })
+          .catch((error) => {
+              console.error('Не удалось обновить контакт:', error);
+              throw error;
+          });
+  };
 
-  const dispatch = useDispatch();
+    const handleContactSelect = (id) => {
+        const contact = contacts.find(
+            (item) => item.id === id
+        );
 
-  const [editingContactId, setEditingContactId] = useState(null);
+        setSelectedContact(contact ?? null);
+    };
 
-useEffect(() => {
-    dispatch(fetchContacts());
-}, [dispatch]);
+    const handleContactNew = () => {
+        setSelectedContact(null);
+    };
 
-  const handleContactSave = (contact) => {
-
-    if (editingContactId === null) {
-
-        dispatch(createContact(contact));
-
-    } else {
-
-        dispatch(editContact(editingContactId, contact))
+    const handleContactRemove = (id) => {
+        dispatch(removeContact(id))
             .then(() => {
-                setEditingContactId(null);
-            });;
-
-    }
-};
-  
-  const handleContactSelect = (id) => {
-
-    setEditingContactId(id)
-
-  }
-
-const handleContactDelete = () => {
-
-    handleContactRemove(editingContactId);
-
-}
-
-const handleContactNew = () => {
-  setEditingContactId(null)
-}
-
-const handleContactRemove = (id) => {
-    dispatch(removeContact(id))
-        .then(() => {
-            if (id === editingContactId) {
-                setEditingContactId(null);
-            }
-        }).catch((error) => {
-            console.error('Не удалось удалить контакт:', error);
-        });
-};
-
-
-const selectedContact = contacts.find(
-  (contact) => contact.id === editingContactId
-);
+                setSelectedContact((prevContact) => {
+                    return prevContact?.id === id
+                        ? null
+                        : prevContact;
+                });
+            })
+            .catch((error) => {
+                console.error(
+                    'Не удалось удалить контакт:',
+                    error
+                );
+            });
+    };
 
     return (
-    <div className="app">
+        <div className="app">
+            <ContactList
+                contacts={contacts}
+                onSelect={handleContactSelect}
+                onRemove={handleContactRemove}
+            />
 
-        <ContactList
-            contacts={contacts}
-            onSelect={handleContactSelect}
-            onRemove={handleContactRemove}
-        />
+            <ContactForm
+                onSave={handleContactSave}
+                onDelete={() => {
+                    if (selectedContact) {
+                        handleContactRemove(selectedContact.id);
+                    }
+                }}
+                onNew={handleContactNew}
+                selectedContact={selectedContact}
+            />
+        </div>
+    );
+}
 
-        <ContactForm
-            onSave={handleContactSave}
-            onDelete={handleContactDelete}
-            onNew={handleContactNew}
-            selectedContact={selectedContact}
-        />
-    </div>
-
-    )
-  }
-
-
-export default App
+export default App;
