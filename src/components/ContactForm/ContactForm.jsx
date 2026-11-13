@@ -1,5 +1,22 @@
 
-import { useState } from 'react';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
+
+import {
+    Paper,
+    Typography,
+    TextField,
+    Button,
+    IconButton,
+    InputAdornment,
+    Stack,
+    Box
+} from '@mui/material';
+
+import ClearIcon from '@mui/icons-material/Clear';
+import SaveIcon from '@mui/icons-material/Save';
+import AddIcon from '@mui/icons-material/Add';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const emptyForm = {
     firstName: '',
@@ -8,140 +25,209 @@ const emptyForm = {
     phone: ''
 };
 
-function ContactForm(props) {
-    const [formData, setFormData] = useState(() => {
-        if (props.selectedContact) {
-            return {
-                firstName: props.selectedContact.firstName,
-                lastName: props.selectedContact.lastName,
-                email: props.selectedContact.email,
-                phone: props.selectedContact.phone
-            };
-        }
+const validationSchema = Yup.object({
+    email: Yup.string()
+        .email('Введите корректный Email')
+        .required('Email обязателен'),
 
-        return { ...emptyForm };
-    });
+    phone: Yup.string()
+        .required('Номер телефона обязателен')
+        .matches(
+            /^\+?[0-9\s()-]+$/,
+            'Недопустимые символы в номере'
+        )
+        .test(
+            'phone-length',
+            'Номер должен содержать от 7 до 15 цифр',
+            (value) => {
+                if (!value) return false;
 
-    const handleInputChange = (event) => {
-        const { name, value } = event.target;
+                const digits = value.replace(/\D/g, '');
 
-        setFormData((prevFormData) => {
-            return {
-                ...prevFormData,
-                [name]: value
-            };
-        });
-    };
-
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-
-        const isCreating = !props.selectedContact;
-
-        try {
-            await props.onSave(formData);
-
-            if (isCreating) {
-                setFormData({ ...emptyForm });
+                return digits.length >= 7 && digits.length <= 15;
             }
-        } catch (error) {
-            console.error('Не удалось сохранить контакт:', error);
+        )
+});
+
+const fields = [
+    { name: 'firstName', label: 'Имя' },
+    { name: 'lastName', label: 'Фамилия' },
+    { name: 'email', label: 'Email' },
+    { name: 'phone', label: 'Телефон' }
+];
+
+function ContactForm(props) {
+    const formik = useFormik({
+        initialValues: props.selectedContact
+            ? {
+                firstName: props.selectedContact.firstName ?? '',
+                lastName: props.selectedContact.lastName ?? '',
+                email: props.selectedContact.email ?? '',
+                phone: props.selectedContact.phone ?? ''
+            }
+            : { ...emptyForm },
+
+        validationSchema,
+        validateOnMount: true,
+
+        onSubmit: async (values, { resetForm }) => {
+            const isCreating = !props.selectedContact;
+
+            try {
+                await props.onSave(values);
+
+                if (isCreating) {
+                    resetForm({ values: { ...emptyForm } });
+                }
+            } catch (error) {
+                console.error(
+                    'Не удалось сохранить контакт:',
+                    error
+                );
+            }
         }
-    };
+    });
 
     const clearField = (event) => {
         const field = event.currentTarget.name;
 
-        setFormData((prevFormData) => {
-            return {
-                ...prevFormData,
-                [field]: ''
-            };
-        });
+        formik.setFieldValue(field, '');
     };
 
     const handleNew = () => {
         props.onNew();
-        setFormData({ ...emptyForm });
+        formik.resetForm({
+            values: { ...emptyForm }
+        });
     };
 
     return (
-        <form onSubmit={handleSubmit}>
-            <input
-                type="text"
-                name="firstName"
-                placeholder="FirstName"
-                value={formData.firstName}
-                onChange={handleInputChange}
-            />
-            <button
-                type="button"
-                name="firstName"
-                onClick={clearField}
+        <Paper
+            elevation={2}
+            sx={{
+                p: 3,
+                borderRadius: 3,
+                width: '100%',
+                maxWidth: 500,
+                boxSizing: 'border-box'
+            }}
+        >
+            <Typography
+                variant="h5"
+                fontWeight={600}
+                sx={{ mb: 1 }}
             >
-                X
-            </button>
+                {props.selectedContact
+                    ? 'Редактирование контакта'
+                    : 'Новый контакт'}
+            </Typography>
 
-            <input
-                type="text"
-                name="lastName"
-                placeholder="LastName"
-                value={formData.lastName}
-                onChange={handleInputChange}
-            />
-            <button
-                type="button"
-                name="lastName"
-                onClick={clearField}
+            <Typography
+                variant="body2"
+                color="text.secondary"
+                sx={{ mb: 3 }}
             >
-                X
-            </button>
+                Заполните данные контакта
+            </Typography>
 
-            <input
-                type="text"
-                name="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleInputChange}
-            />
-            <button
-                type="button"
-                name="email"
-                onClick={clearField}
+            <Box
+                component="form"
+                onSubmit={formik.handleSubmit}
+                noValidate
             >
-                X
-            </button>
+                <Stack spacing={2.5}>
+                    {fields.map(({ name, label }) => (
+                        <TextField
+                            key={name}
+                            fullWidth
+                            name={name}
+                            label={label}
+                            type={
+                                name === 'email'
+                                    ? 'email'
+                                    : name === 'phone'
+                                      ? 'tel'
+                                      : 'text'
+                            }
+                            value={formik.values[name]}
+                            onChange={formik.handleChange}
+                            onBlur={formik.handleBlur}
+                            error={Boolean(
+                                formik.touched[name] &&
+                                formik.errors[name]
+                            )}
+                            helperText={
+                                formik.touched[name] &&
+                                formik.errors[name]
+                                    ? formik.errors[name]
+                                    : name === 'phone'
+                                      ? 'От 7 до 15 цифр'
+                                      : ' '
+                            }
+                            slotProps={{
+                                input: {
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                name={name}
+                                                onClick={clearField}
+                                                edge="end"
+                                                size="small"
+                                                aria-label={`Очистить ${label}`}
+                                            >
+                                                <ClearIcon fontSize="small" />
+                                            </IconButton>
+                                        </InputAdornment>
+                                    )
+                                }
+                            }}
+                        />
+                    ))}
 
-            <input
-                type="text"
-                name="phone"
-                placeholder="Phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-            />
-            <button
-                type="button"
-                name="phone"
-                onClick={clearField}
-            >
-                X
-            </button>
+                    <Box
+                        sx={{
+                            display: 'flex',
+                            gap: 1.5,
+                            flexWrap: 'wrap',
+                            pt: 1
+                        }}
+                    >
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            startIcon={<SaveIcon />}
+                            disabled={
+                                !formik.isValid ||
+                                formik.isSubmitting
+                            }
+                        >
+                            Save
+                        </Button>
 
-            <button type="submit">Save</button>
+                        <Button
+                            type="button"
+                            variant="outlined"
+                            startIcon={<AddIcon />}
+                            onClick={handleNew}
+                        >
+                            New
+                        </Button>
 
-            <button type="button" onClick={handleNew}>
-                New
-            </button>
-
-            {props.selectedContact && (
-                <button
-                    type="button"
-                    onClick={props.onDelete}
-                >
-                    Delete
-                </button>
-            )}
-        </form>
+                        {props.selectedContact && (
+                            <Button
+                                type="button"
+                                variant="outlined"
+                                color="error"
+                                startIcon={<DeleteIcon />}
+                                onClick={props.onDelete}
+                            >
+                                Delete
+                            </Button>
+                        )}
+                    </Box>
+                </Stack>
+            </Box>
+        </Paper>
     );
 }
 
